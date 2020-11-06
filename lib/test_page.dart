@@ -1,10 +1,11 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_provider/test_page2.dart';
+import 'package:flutter_provider/test_page3.dart';
+import 'package:provider/provider.dart';
 
 import 'base_model.dart';
-
+import 'main.dart';
 
 ///路由器列表页面
 class TestPage extends StatefulWidget {
@@ -16,31 +17,50 @@ class TestPage extends StatefulWidget {
 }
 
 class _TestPageState extends State<TestPage> {
+  var index = 0;
 
   @override
   Widget build(BuildContext context) {
-    return NotifierProviderWidget<LoginViewModel>(
-      model: LoginViewModel(loginServive: LoginServive()),
-      builder: (context, model, child) => Scaffold(
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MyModel()),
+      ],
+      child: Scaffold(
         appBar: AppBar(
-          title: Text('provider'),
+          title: Text('登录$index'),
         ),
         body: Column(
           children: <Widget>[
-            model.state == ViewState.Loading
-                ? Center(
-                    child: CircularProgressIndicator(),
-                  )
-                : Text(model.info),
+            Builder(
+              builder: (context) {
+                return Text('计数${context.watch<MyModel>().counter}');
+              },
+            ),
+            Builder(
+              builder: (context) {
+                return Text('index$index');
+              },
+            ),
+            Consumer<MyModel>(
+              child: Text('Consumer'),
+              builder: (context, model, child) {
+                return FlatButton(
+                    color: Colors.tealAccent,
+                    onPressed: () {
+                      index++;
+                      model.incrementCounter();
+                    },
+                    child: Text("增加"));
+              },
+            ),
             FlatButton(
                 color: Colors.tealAccent,
-                onPressed: () => {
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (context) {
-                        return ProviderTestPage();
-                      }))
-                    },
-                child: Text("登录")),
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return TestPage3();
+                  }));
+                },
+                child: Text("页面跳转"))
           ],
         ),
       ),
@@ -54,33 +74,9 @@ class MyModel with ChangeNotifier {
   int counter = 0;
 
   Future<void> incrementCounter() async {
-    await Future.delayed(Duration(seconds: 2));
+    await Future.delayed(Duration(seconds: 1));
     counter++;
     print(counter);
     notifyListeners();
-  }
-}
-
-/// viewModel
-class LoginViewModel extends BaseModel {
-  LoginServive _loginServive;
-  String info = '请登录';
-
-  LoginViewModel({@required LoginServive loginServive})
-      : _loginServive = loginServive;
-
-  Future<String> login(String pwd) async {
-    setState(ViewState.Loading);
-    info = await _loginServive.login(pwd);
-    setState(ViewState.Success);
-  }
-}
-
-/// api
-class LoginServive {
-  static const String Login_path = 'xxxxxx';
-
-  Future<String> login(String pwd) async {
-    return new Future.delayed(const Duration(seconds: 1), () => "登录成功");
   }
 }
